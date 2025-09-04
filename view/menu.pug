@@ -1,0 +1,9 @@
+mixin menuItem(href, title)
+    li&attributes(attributes)
+        a(href=href)= title
+
+header 
+    nav
+        ul
+            each item in items 
+                +menuItem(item.path, item.title)(class=item.isActive)

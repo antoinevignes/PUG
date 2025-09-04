@@ -1,0 +1,17 @@
+extends layout.pug 
+
+block content 
+    div.container
+        h1 Me contacter 
+
+        form(action="/contact-me" method="POST")
+            div
+                label(for="email") Votre email :
+                input#email(type="email" name="email" required)
+
+            div
+                label(for="message") Votre message :
+                textarea#message(name="message" rows="5" required)
+
+            div
+                button(type="submit") Envoyer
