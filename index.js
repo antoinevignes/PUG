@@ -32,6 +32,7 @@ const server = http.createServer((req, res) => {
   if (url === "/contact-me" && req.method === "GET") {
     const html = pug.renderFile(path.join(viewPath, "contact.pug"), {
       items: menuItems,
+      toastMessage: null,
     });
 
     res.writeHead(200, { "Content-Type": "text/html" });
