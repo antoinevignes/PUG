@@ -1,0 +1,8 @@
+mixin menuItem(href, title)
+        a(href=href)= title
+
+header 
+    nav
+        ul
+            +menuItem("/", "Accueil")
+            +menuItem("/students", "Étudiants")

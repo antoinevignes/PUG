@@ -1,0 +1,31 @@
+extends layout.pug
+
+block content
+    div.container     
+        h1 App étudiants
+        form(action="/" method="POST") 
+            div
+                label(for="name") Nom :
+                input(type="text" name="name" required)
+
+            div
+                label(for="birth") Date de naissance :
+                input(type="date" name="birth" required)
+
+            div
+                button(type="submit") Envoyer
+
+
+    if toastMessage
+        .toast(style="position:fixed; right:1rem; bottom:1rem; background:#4caf50; color:#fff; padding:10px 14px; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.15); z-index:9999;")= toastMessage
+
+block script
+    script. 
+        (function autoHideToast() {
+            const toast = document.querySelector('.toast');
+            if (toast) {
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 5000);
+            }
+        })();
