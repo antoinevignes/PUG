@@ -1,6 +1,25 @@
-main {
+.container,
+.navbar {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.nav-list {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#student {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
 }

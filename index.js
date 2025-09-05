@@ -2,24 +2,44 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import pug from "pug";
+import dotenv from "dotenv";
+import { formatDate, reverseFormat } from "./utils/utils.js";
+dotenv.config();
+
+const host = process.env.APP_HOST;
+const port = process.env.APP_PORT;
 
 const cwd = process.cwd();
-const viewPath = path.join(cwd, "view");
+const viewPath = path.join(cwd, "views");
+const dataPath = path.join(cwd, "data", "students.json");
+const cssPath = path.join(cwd, "assets/css", "style.css");
 
-const menuItems = [
-  { path: "/", title: "Home", isActive: true },
-  { path: "/about-me", title: "About", isActive: false },
-  { path: "/references", title: "References", isActive: false },
-  { path: "/contact-me", title: "Contact", isActive: false },
-];
+let students = [];
+if (fs.existsSync(dataPath)) {
+  const content = fs.readFileSync(dataPath, "utf-8").trim();
+  students = content ? JSON.parse(content) : [];
+}
 
 const server = http.createServer((req, res) => {
   const url = req.url;
 
+  // CSS
+  if (url === "/style.css") {
+    fs.readFile(cssPath, (err, data) => {
+      if (err) {
+        res.writeHead(404);
+        res.end("Not found");
+        return;
+      }
+      res.writeHead(200, { "Content-Type": "text/css" });
+      res.end(data);
+    });
+    return;
+  }
+
   // HOME
   if (url === "/" && req.method === "GET") {
     const html = pug.renderFile(path.join(viewPath, "home.pug"), {
-      items: menuItems,
       toastMessage: null,
     });
 
@@ -28,20 +48,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // PAGE CONTACT
-  if (url === "/contact-me" && req.method === "GET") {
-    const html = pug.renderFile(path.join(viewPath, "contact.pug"), {
-      items: menuItems,
-      toastMessage: null,
-    });
-
-    res.writeHead(200, { "Content-Type": "text/html" });
-    res.end(html);
-    return;
-  }
-
-  // FORM CONTACT
-  if (url === "/contact-me" && req.method === "POST") {
+  // FORM AJOUT
+  if (url === "/" && req.method === "POST") {
     let body = "";
 
     req.on("data", (chunk) => {
@@ -50,31 +58,66 @@ const server = http.createServer((req, res) => {
 
     req.on("end", () => {
       const params = new URLSearchParams(body);
-      const email = params.get("email");
-      const message = params.get("message");
+      const name = params.get("name");
+      const birth = params.get("birth");
+      const formattedBirth = reverseFormat(birth);
 
-      const contact = { email, message };
+      const student = { name, birth: formattedBirth };
 
-      const filePath = path.join(cwd, "contacts.json");
-      let contacts = [];
+      students.push(student);
 
-      if (fs.existsSync(filePath)) {
-        let content = fs.readFileSync(filePath, "utf-8").trim();
-        if (content === "") {
-          fs.writeFileSync(filePath, "[]", "utf-8");
-          content = "[]";
+      fs.writeFile(dataPath, JSON.stringify(students, null, 2), (err) => {
+        if (err) {
+          console.error("Erreur lors de l'écriture du fichier:", err);
         }
-        contacts = JSON.parse(content);
-      } else {
-        fs.writeFileSync(filePath, "[]", "utf-8");
-      }
-
-      contacts.push(contact);
-      fs.writeFileSync(filePath, JSON.stringify(contacts, null, 2));
+      });
 
       const html = pug.renderFile(path.join(viewPath, "home.pug"), {
-        items: menuItems,
-        toastMessage: "Votre message a bien été envoyé !",
+        toastMessage: "Votre étudiant a bien été ajouté !",
+      });
+
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(html);
+    });
+    return;
+  }
+
+  // PAGE ETUDIANTS
+  if (url === "/students" && req.method === "GET") {
+    const html = pug.renderFile(path.join(viewPath, "studentList.pug"), {
+      students: students,
+      formatDate,
+      toastMessage: null,
+    });
+
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(html);
+    return;
+  }
+
+  // SUPPRIMER ETUDIANT
+  if (url === "/students" && req.method === "POST") {
+    let body = "";
+
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on("end", () => {
+      const params = new URLSearchParams(body);
+      const index = parseInt(params.get("index"), 10);
+
+      if (!isNaN(index) && students[index]) {
+        students.splice(index, 1);
+
+        const filePath = path.join(cwd, "data", "students.json");
+        fs.writeFileSync(filePath, JSON.stringify(students, null, 2));
+      }
+
+      const html = pug.renderFile(path.join(viewPath, "studentList.pug"), {
+        students,
+        formatDate,
+        toastMessage: "Étudiant supprimé avec succès !",
       });
 
       res.writeHead(200, { "Content-Type": "text/html" });
@@ -89,5 +132,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(3000, () => {
-  console.log("Serveur en ligne sur http://localhost:3000");
+  console.log(`Serveur en ligne sur http://${host}:${port}`);
 });

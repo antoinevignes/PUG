@@ -1,8 +1,8 @@
 mixin menuItem(href, title)
         a(href=href)= title
 
-header 
-    nav
-        ul
+header
+    nav.navbar
+        ul.nav-list
             +menuItem("/", "Accueil")
             +menuItem("/students", "Étudiants")
