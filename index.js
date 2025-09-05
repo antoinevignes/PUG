@@ -4,6 +4,7 @@ import path from "node:path";
 import pug from "pug";
 import dotenv from "dotenv";
 import { formatDate, reverseFormat } from "./utils/utils.js";
+import dayjs from "dayjs";
 dotenv.config();
 
 const host = process.env.APP_HOST;
@@ -49,7 +50,7 @@ const server = http.createServer((req, res) => {
   }
 
   // FORM AJOUT
-  if (url === "/" && req.method === "POST") {
+  if (url === "/add-student" && req.method === "POST") {
     let body = "";
 
     req.on("data", (chunk) => {
@@ -67,9 +68,7 @@ const server = http.createServer((req, res) => {
       students.push(student);
 
       fs.writeFile(dataPath, JSON.stringify(students, null, 2), (err) => {
-        if (err) {
-          console.error("Erreur lors de l'écriture du fichier:", err);
-        }
+        if (err) console.error(err);
       });
 
       const html = pug.renderFile(path.join(viewPath, "home.pug"), {
@@ -95,8 +94,70 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // PAGE MODIFIER ETUDIANT
+  if (url.startsWith("/edit-student") && req.method === "GET") {
+    const query = new URL(req.url, `http://${host}:${port}`).searchParams;
+    const index = parseInt(query.get("index"), 10);
+
+    if (Number.isInteger(index) && index >= 0 && index < students.length) {
+      const student = students[index];
+      const birthForInput = dayjs(student.birth, "YYYY-DD-MM").format(
+        "YYYY-MM-DD"
+      );
+
+      const html = pug.renderFile(path.join(viewPath, "editStudent.pug"), {
+        student,
+        birth: birthForInput,
+        index,
+        toastMessage: null,
+      });
+
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(html);
+      return;
+    } else {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("Étudiant introuvable");
+      return;
+    }
+  }
+
+  // FORM MODIFIER ETUDIANT
+  if (url === "/edit-student" && req.method === "POST") {
+    let body = "";
+
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+    req.on("end", () => {
+      const params = new URLSearchParams(body);
+      const index = parseInt(params.get("index"), 10);
+      const name = params.get("name");
+      const birth = reverseFormat(params.get("birth"));
+
+      if (Number.isInteger(index) && index >= 0 && index < students.length) {
+        students[index].name = name;
+        students[index].birth = birth;
+
+        fs.writeFile(dataPath, JSON.stringify(students, null, 2), (err) => {
+          if (err) console.error(err);
+        });
+      }
+
+      const html = pug.renderFile(path.join(viewPath, "studentList.pug"), {
+        students,
+        formatDate,
+        toastMessage: "Étudiant modifié avec succès !",
+      });
+
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(html);
+    });
+    return;
+  }
+
   // SUPPRIMER ETUDIANT
-  if (url === "/students" && req.method === "POST") {
+  if (url === "/delete-student" && req.method === "POST") {
     let body = "";
 
     req.on("data", (chunk) => {
@@ -107,11 +168,13 @@ const server = http.createServer((req, res) => {
       const params = new URLSearchParams(body);
       const index = parseInt(params.get("index"), 10);
 
-      if (!isNaN(index) && students[index]) {
+      if (Number.isInteger(index) && index >= 0 && index < students.length) {
         students.splice(index, 1);
 
         const filePath = path.join(cwd, "data", "students.json");
-        fs.writeFileSync(filePath, JSON.stringify(students, null, 2));
+        fs.writeFile(filePath, JSON.stringify(students, null, 2), (err) => {
+          if (err) console.error(err);
+        });
       }
 
       const html = pug.renderFile(path.join(viewPath, "studentList.pug"), {

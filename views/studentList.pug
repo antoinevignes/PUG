@@ -3,14 +3,17 @@ extends layout.pug
 block content
     div.container
         h1 Liste des étudiants
-
-        ul.student-list
-            each student, index in students    
-                li#student
-                    | #{student.name} #{formatDate(student.birth)}
-                    form(method="POST" action="/students")
-                        input(type="hidden" name="index" value=index)
-                        input(type="submit" value="X")
+        if students.length === 0
+            p Aucun étudiant à afficher
+        else
+            ul.student-list
+                each student, index in students    
+                    li#student
+                        | #{student.name} - #{formatDate(student.birth)}
+                        a(href=`/edit-student?index=${index}`) Modifier
+                        form(method="POST" action="/delete-student")
+                            input(type="hidden" name="index" value=index)
+                            input(type="submit" value="X")
     if toastMessage
         .toast(style="position:fixed; right:1rem; bottom:1rem; background:#4caf50; color:#fff; padding:10px 14px; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.15); z-index:9999;")= toastMessage
 

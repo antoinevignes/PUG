@@ -1,26 +1,28 @@
 extends layout.pug
 
 block content
-    div.container     
-        h1 App étudiants
-        form.add-form(action="/add-student" method="POST") 
+    div.container
+        h1 Modifier l'étudiant
+
+        form(action="/edit-student" method="POST")
+            input(type="hidden" name="index" value=index)
+            
             div
                 label(for="name") Nom :
-                input(type="text" name="name" required)
+                input(type="text" name="name" required value=student.name)
 
             div
                 label(for="birth") Date de naissance :
-                input(type="date" name="birth" required)
+                input(type="date" name="birth" required value=birth)
 
             div
-                button(type="submit") Envoyer
-
+                button(type="submit") Enregistrer les modifications
 
     if toastMessage
         .toast(style="position:fixed; right:1rem; bottom:1rem; background:#4caf50; color:#fff; padding:10px 14px; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.15); z-index:9999;")= toastMessage
 
 block script
-    script. 
+    script.
         (function autoHideToast() {
             const toast = document.querySelector('.toast');
             if (toast) {
